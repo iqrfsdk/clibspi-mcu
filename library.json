@@ -1,0 +1,42 @@
+{
+  "name": "IQRF SPI",
+  "keywords": "IQRF, communication, spi, rf, radio, wireless",
+  "description": "IQRF SPI library for Arduino with FW & CFG programmer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iqrfsdk/clibspi-mcu.git"
+  },
+  "version": "2.0.0",
+  "license": "Apache-2.0",
+  "authors": [{
+    "name": "Dusan Machut",
+    "email": "dusan.machut@gmail.com"
+  },
+  {
+    "name": "Rostislav Spinar",
+    "email": "rostislav.spinar@microrisc.com",
+    "url": "https://github.com/spinarr",
+    "maintainer": true
+  },
+  {
+    "name": "Roman Ondracek",
+    "email": "ondracek.roman@centrum.cz",
+    "url": "https://github.com/Roman3349"
+  }],
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "atmelavr",
+  ],
+  "examples": [
+    "examples/*/*/*.ino"
+  ],
+  "export": {
+    "exclude": [
+      "ci/",
+      ".gitignore",
+      ".travis.yml"
+    ]
+  }
+}
