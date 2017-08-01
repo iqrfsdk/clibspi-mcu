@@ -1,5 +1,7 @@
 # clibspi-mcu
 
+[![Build Status](https://travis-ci.org/iqrfsdk/clibspi-mcu.svg?branch=master)](https://travis-ci.org/iqrfsdk/clibspi-mcu)
+
 IQRF SPI library for uC with TR-7x upload functionality.
 Targeted for Arduino boards.
 
