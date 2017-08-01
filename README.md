@@ -1,7 +1,11 @@
-#clibspi-mcu
+# clibspi-mcu
 
-IQRF SPI library for uC with TR upload functionality.
+IQRF SPI library for uC with TR-7x upload functionality.
 Targeted for Arduino boards.
+
+Supported IQRF OS version of the TR-7x module:
+
+- IQRF OS v4.01D
 
 Console commands:
 
@@ -18,6 +22,6 @@ Console commands:
 - pgm iqrf file.ext : tests and uploads file *.iqrf into TR module
 - pgm trcnfg file.ext : tests and uploads file *.trcnfg into TR module
 
-Missing:
+Todo:
 
-- upload of the USER PASSWORD a USER KEY (will be added later)
+- upload of the USER PASSWORD a USER KEY
