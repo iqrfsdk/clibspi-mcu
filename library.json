@@ -27,7 +27,7 @@
     "arduino"
   ],
   "platforms": [
-    "atmelavr",
+    "atmelavr"
   ],
   "examples": [
     "examples/*/*/*.ino"
