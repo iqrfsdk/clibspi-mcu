@@ -23,8 +23,8 @@
 
 #include "ccp.h"
 #include "console.h"
-#include "iqrf.h"
-#include "iqrfpgm.h"
+#include <IQRF.h>
+#include <IQRFPgm.h>
 
 #define SD_SS           4           // SD card chip select pin
 

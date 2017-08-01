@@ -23,7 +23,7 @@
 #include <ctype.h>
 #include <SPI.h>
 #include <TimerOne.h>
-#include "iqrf.h"
+#include "IQRF.h"
 
 typedef struct {
     volatile uint8_t Status;

@@ -25,7 +25,7 @@
 #include <SD.h>
 #include "ccp.h"
 #include "console.h"
-#include "iqrf.h"
+#include "IQRF.h"
 
 /* data types */
 typedef struct {                        // command decode table item structure
