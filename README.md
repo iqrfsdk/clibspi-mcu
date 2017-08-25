@@ -7,7 +7,11 @@ Targeted for Arduino boards.
 
 Supported IQRF OS version of the TR-7x module:
 
-- IQRF OS v4.01D
+- IQRF OS v4.02D
+
+Documentation:
+
+- please, refer to current IQRF Startup Package for updated IQRF SPI specification
 
 Console commands:
 
