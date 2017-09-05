@@ -1,12 +1,12 @@
-
+﻿
 /**
  * @file Arduino console command processor
  * @author Dušan Machút <dusan.machut@gmail.com>
- * @author Rostislav Špinar <rostislav.spinar@microrisc.com>
+ * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <ondracek.roman@centrum.cz>
  * @version 1.2
  *
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ const COM Commands[] PROGMEM ={          // command decode table
 const char Header[][HEADER_LINE_SIZE] PROGMEM ={
   "--------------------------------------------------------------------------",
   "|                 Arduino console command processor                      |",
-  "|                          Microrisc s.r.o                               |",
+  "|                          IQRF Tech s.r.o                               |",
   "--------------------------------------------------------------------------"
 };
 
