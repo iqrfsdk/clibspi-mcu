@@ -33,15 +33,15 @@
 #define CCP_UPLOADING             4
 #define CCP_BAD_PARAMETER         5
 #define CCP_FILE_NOT_FOUND        6
-#define CCP_CODE_FILE_ERR         7
+#define CCP_FILE_FORMAT_ERR       7
 #define CCP_DIR_NOT_FOUND         8
 #define CCP_SENDING_DATA          9
 #define CCP_DATA_SETNT_OK         10
 #define CCP_DATA_SENT_ERR         11
 #define CCP_TR_NOT_READY          12
 #define CCP_RECEIVED_DATA         13
-#define CCP_CODE_WRITE_OK         14
-#define CCP_CODE_WRITE_ERR        15
+#define CCP_FILE_WRITE_OK         14
+#define CCP_PROGRAMMING_ERR       15
 
 extern char CcpCommandParameter[SIZE_OF_PARAM];
 extern const char CrLf[];

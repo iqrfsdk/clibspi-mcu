@@ -77,15 +77,15 @@ const char SystemMsg[17][26] PROGMEM ={        // error messages
   "Uploading ....           ",   /* 4 */
   "Bad command parameter    ",   /* 5 */
   "File not found           ",   /* 6 */
-  "Code file ERROR          ",   /* 7 */
+  "File format ERROR        ",   /* 7 */
   "Directory not found      ",   /* 8 */
   "Sending data             ",   /* 9 */
   "Data sent OK             ",   /* 10 */
   "Data sent ERROR          ",   /* 11 */
   "TR module not ready      ",   /* 12 */
   "Received data:           ",   /* 13 */
-  "Code written successfully",   /* 14 */
-  "Code write ERROR         ",   /* 15 */
+  "File written successfully",   /* 14 */
+  "Programming ERROR        ",   /* 15 */
 };
 
 const char CmdPrompt[] = {"cmd> "};

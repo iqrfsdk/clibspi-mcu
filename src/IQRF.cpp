@@ -118,7 +118,7 @@ void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)
     if (iqrfGetModuleType() == TR_72D || iqrfGetModuleType() == TR_76D){
         Timer1.stop();
         IqrfControl.FastSPI = true;
-        Timer1.setPeriod(150);
+        Timer1.setPeriod(200);
         Timer1.start();
     }
 
@@ -137,7 +137,7 @@ void iqrfDriver(void)
     if (IqrfControl.Status == IQRF_READ || IqrfControl.Status == IQRF_WRITE || !IqrfControl.TimeCnt) {
         iqrfSpiDriver();
         if (IqrfControl.FastSPI == true){
-            IqrfControl.TimeCnt = (SPI_STATUS_POOLING_TIME * 7) + 1;
+            IqrfControl.TimeCnt = (SPI_STATUS_POOLING_TIME * 5) + 1;
         }
         else{
             IqrfControl.TimeCnt = SPI_STATUS_POOLING_TIME + 1;
