@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file IQRF SPI support library (firmware and config programmer extension)
  * @author Dušan Machút <dusan.machut@gmail.com>
- * @author Rostislav Špinar <rostislav.spinar@microrisc.com>
+ * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <ondracek.roman@centrum.cz>
  * @version 2.0
  *
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ typedef struct{
 } PREPARE_MEM_BLOCK;
 
 /* Function prototypes */
+uint8_t iqrfPgmWriteKeyOrPass(uint8_t Selector, uint8_t *Buffer);
 uint8_t iqrfPgmProcessCfgFile(void);
 void iqrfPgmMoveOverflowedData(void);
 uint8_t iqrfPgmPrepareMemBlock(void);
@@ -79,7 +80,7 @@ uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
                     CheckCodeTaskSM = CHECK_HEX_CODE;
                 }
                 else{
-                    if (FileInfo->FileSize != 33) return(IQRF_PGM_ERROR);
+                    if (FileInfo->FileSize < 33) return(IQRF_PGM_ERROR);
                     CheckCodeTaskSM = CHECK_CFG_CODE;
                 }
             }
@@ -249,7 +250,6 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
                     WriteCodeTaskSM = PROG_END;                       // goto end programming mode
                 }
             }
-
         break;
 
         case WAIT_PROG_END:     // wait until last packet is written to TR module
@@ -272,6 +272,84 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
     return(((uint32_t) FileInfo->FileByteCnt * 100) / FileInfo->FileSize);
 }
 
+/**
+ * Core programming function for user password or user key
+ * @param BufferContent selects between user key or user password to be written
+ * @param Buffer pointer to 16 byte buffer with user password or user key
+ * @return result of partial programming operation
+ */
+uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer)
+{
+    static enum {
+        INIT_TASK = 0,
+        ENTER_PROG_MODE,
+        WAIT_PROG_MODE,
+        WAIT_PROG_END,
+        PROG_END,
+    } WriteCodeTaskSM = INIT_TASK;
+
+    static uint8_t Attempts;
+    static uint8_t OperationResult;
+    static uint32_t TimeoutMilli;
+
+   	switch (WriteCodeTaskSM)
+   	{
+        case INIT_TASK:     // initialize programming state machine
+            Attempts = 1;
+            if (BufferContent == IQRF_PGM_PASS_FILE_TYPE) PrepareMemBlock.MemoryBlock[0] = 0xD0;
+            else PrepareMemBlock.MemoryBlock[0] = 0xD1;
+            PrepareMemBlock.MemoryBlock[1] = 0x10;
+            memcpy((uint8_t *)&PrepareMemBlock.MemoryBlock[2], Buffer, 0x10);
+            WriteCodeTaskSM = ENTER_PROG_MODE;
+        break;
+
+        case ENTER_PROG_MODE:
+            iqrfTrEnterPgmMode();
+            TimeoutMilli = millis();
+            WriteCodeTaskSM = WAIT_PROG_MODE;
+        break;
+
+        case WAIT_PROG_MODE:      // wait for TR module programming mode
+            if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetTxBufferStatus() == IQRF_BUFFER_FREE && iqrfGetLibraryStatus() == IQRF_READY) {
+                // send USER PASSWORD or USER KEY to TR module
+                iqrfSendPacket(SPI_EEPROM_PGM, (uint8_t *)&PrepareMemBlock.MemoryBlock[0], PrepareMemBlock.MemoryBlock[1] + 2);
+                OperationResult = IQRF_PGM_SUCCESS;
+                WriteCodeTaskSM = WAIT_PROG_END;            // goto end programming mode
+            }
+            else {
+                if (millis() - TimeoutMilli >= 500) {
+                    // in a case, try it twice to enter programming mode
+                    if (Attempts) {
+                        Attempts--;
+                        WriteCodeTaskSM = ENTER_PROG_MODE;
+                    }
+                    else {
+                        // TR module probably does not work
+                        OperationResult = IQRF_PGM_ERROR;
+                        WriteCodeTaskSM = PROG_END;
+                    }
+                }
+            }
+        break;
+
+        case WAIT_PROG_END:     // wait until last packet is written to TR module
+            if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY) {
+                iqrfTrEndPgmMode();
+                WriteCodeTaskSM = PROG_END;                           // goto end programming mode
+            }
+        break;
+
+        case PROG_END:
+            // if no packet is pending to send to TR module
+            if (iqrfGetTxBufferStatus() == IQRF_BUFFER_FREE && iqrfGetLibraryStatus() == IQRF_READY){
+                WriteCodeTaskSM = INIT_TASK;
+                return(OperationResult);
+            }
+        break;
+    }
+
+    return(0);
+}
 
 /**
  * Reading and preparing a configuration data to be programmed into the TR module
@@ -315,6 +393,7 @@ uint8_t iqrfPgmProcessCfgFile(void)
             PrepareMemBlock.MemoryBlock[0] = RFPGM_CFG_ADR;
             PrepareMemBlock.MemoryBlock[1] = 0x01;
             PrepareMemBlock.MemoryBlock[2] = PrepareMemBlock.MemoryBlockNumber;
+            PrepareMemBlock.MemoryBlockProcessState = 1;
 
             PrepareMemBlock.DataInBufferReady = 2;
             return(IQRF_PGM_EEPROM_BLOCK_READY);

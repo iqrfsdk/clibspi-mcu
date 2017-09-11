@@ -1,12 +1,12 @@
-
+﻿
 /**
  * @file Arduino console command processor
  * @author Dušan Machút <dusan.machut@gmail.com>
- * @author Rostislav Špinar <rostislav.spinar@microrisc.com>
+ * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <ondracek.roman@centrum.cz>
  * @version 1.2
  *
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ const COM Commands[] PROGMEM ={          // command decode table
 const char Header[][HEADER_LINE_SIZE] PROGMEM ={
   "--------------------------------------------------------------------------",
   "|                 Arduino console command processor                      |",
-  "|                          Microrisc s.r.o                               |",
+  "|                          IQRF Tech s.r.o                               |",
   "--------------------------------------------------------------------------"
 };
 
@@ -77,15 +77,15 @@ const char SystemMsg[17][26] PROGMEM ={        // error messages
   "Uploading ....           ",   /* 4 */
   "Bad command parameter    ",   /* 5 */
   "File not found           ",   /* 6 */
-  "Code file ERROR          ",   /* 7 */
+  "File format ERROR        ",   /* 7 */
   "Directory not found      ",   /* 8 */
   "Sending data             ",   /* 9 */
   "Data sent OK             ",   /* 10 */
   "Data sent ERROR          ",   /* 11 */
   "TR module not ready      ",   /* 12 */
   "Received data:           ",   /* 13 */
-  "Code written successfully",   /* 14 */
-  "Code write ERROR         ",   /* 15 */
+  "File written successfully",   /* 14 */
+  "Programming ERROR        ",   /* 15 */
 };
 
 const char CmdPrompt[] = {"cmd> "};

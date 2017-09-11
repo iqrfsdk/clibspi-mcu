@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file IQRF SPI support library (firmware and config programmer extension)
  * @author Dušan Machút <dusan.machut@gmail.com>
- * @author Rostislav Špinar <rostislav.spinar@microrisc.com>
+ * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <ondracek.roman@centrum.cz>
  * @version 2.0
  *
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@
 #define	IQRF_PGM_HEX_FILE_TYPE        1
 #define IQRF_PGM_PLUGIN_FILE_TYPE     2
 #define IQRF_PGM_CFG_FILE_TYPE        3
+#define IQRF_PGM_PASS_FILE_TYPE       4
+#define IQRF_PGM_KEY_FILE_TYPE        5
 
 #define IQRF_SIZE_OF_FLASH_BLOCK      64
 #define IQRF_LICENCED_MEMORY_BLOCKS   96
@@ -80,5 +82,13 @@ uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo);
  * @return result of partial programming operation
  */
 uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo);
+
+/**
+ * Core programming function for user password or user key
+ * @param BufferContent selects between user key or user password to be written
+ * @param Buffer pointer to 16 byte buffer with user password or user key
+ * @return result of partial programming operation
+ */
+uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer);
 
 #endif

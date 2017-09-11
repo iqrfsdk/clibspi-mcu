@@ -1,11 +1,11 @@
-/**
+﻿/**
  * @file Arduino console command processor
  * @author Dušan Machút <dusan.machut@gmail.com>
- * @author Rostislav Špinar <rostislav.spinar@microrisc.com>
+ * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <ondracek.roman@centrum.cz>
  * @version 1.2
  *
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,15 +33,15 @@
 #define CCP_UPLOADING             4
 #define CCP_BAD_PARAMETER         5
 #define CCP_FILE_NOT_FOUND        6
-#define CCP_CODE_FILE_ERR         7
+#define CCP_FILE_FORMAT_ERR       7
 #define CCP_DIR_NOT_FOUND         8
 #define CCP_SENDING_DATA          9
 #define CCP_DATA_SETNT_OK         10
 #define CCP_DATA_SENT_ERR         11
 #define CCP_TR_NOT_READY          12
 #define CCP_RECEIVED_DATA         13
-#define CCP_CODE_WRITE_OK         14
-#define CCP_CODE_WRITE_ERR        15
+#define CCP_FILE_WRITE_OK         14
+#define CCP_PROGRAMMING_ERR       15
 
 extern char CcpCommandParameter[SIZE_OF_PARAM];
 extern const char CrLf[];

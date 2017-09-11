@@ -1,6 +1,6 @@
 
 /**
- * Copyright 2015-2017 MICRORISC s.r.o.
+ * Copyright 2015-2017 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@
  * Variables
  */
 uint8_t   SDCardReady;
+uint8_t   UserBuffer[16];
 File CodeFile;
 IQRF_PGM_FILE_INFO  MyCodeFileInfo;
 
@@ -310,6 +311,7 @@ void ccpPgmFile(uint16_t CommandParameter)
     uint8_t Message = 0;
     uint8_t TempVariable;
     uint8_t StoreProgress;
+    uint8_t Cnt;
     char Filename[26];
 
     // if SD card is not ready print error msg
@@ -332,7 +334,19 @@ void ccpPgmFile(uint16_t CommandParameter)
                         // set TRCNFG filetype
                         MyCodeFileInfo.FileType = IQRF_PGM_CFG_FILE_TYPE;
                     }
-                    else Message = CCP_BAD_PARAMETER;
+                    else{
+                        if (strcmp("pass",CcpCommandParameter)==0){
+                            // set USER PASSWORD filetype
+                            MyCodeFileInfo.FileType = IQRF_PGM_PASS_FILE_TYPE;
+                        }
+                        else{
+                            if (strcmp("key",CcpCommandParameter)==0){
+                                // set USER KEY filetype
+                                MyCodeFileInfo.FileType = IQRF_PGM_KEY_FILE_TYPE;
+                            }
+                            else Message = CCP_BAD_PARAMETER;
+                        }
+                    }
                 }
             }
         }
@@ -358,46 +372,65 @@ void ccpPgmFile(uint16_t CommandParameter)
             if (CodeFile){
                 // read size of file
                 MyCodeFileInfo.FileSize = CodeFile.size();
-                sysMsgPrinter(CCP_CHECKING);
-                // check if code file is correct
-                while ((TempVariable = iqrfPgmCheckCodeFile(&MyCodeFileInfo)) <= 100);
-                // if format of code file is correct
-                if (TempVariable == IQRF_PGM_SUCCESS){
-                    sysMsgPrinter(CCP_CODE_FILE_OK);
-                    // rewind code file
-                    iqrfSuspendDriver();
-                    CodeFile.seek(0);
-                    iqrfRunDriver();
-
-                    sysMsgPrinter(CCP_UPLOADING);    // message "Uploading..."
-                    strcpy_P(Filename, ProgressBar);
-                    Serial.print(Filename);
-                    StoreProgress = 0;
-                    // write code file to TR module
-                    while ((TempVariable = iqrfPgmWriteCodeFile(&MyCodeFileInfo)) <= 100){
-                        // during code file storing, print progress bar
-                        while (StoreProgress < TempVariable/10){
-                            Serial.write('*');
-                            StoreProgress++;
-                        }
-                    }
-                    // if code file written OK
-                    if (TempVariable == IQRF_PGM_SUCCESS){
-                        while (StoreProgress < 10){
-                           Serial.write('*');
-                           StoreProgress++;
-                       }
-                       Serial.println();
-                       sysMsgPrinter(CCP_CODE_WRITE_OK);
-                    }
+                if (MyCodeFileInfo.FileType == IQRF_PGM_PASS_FILE_TYPE || MyCodeFileInfo.FileType == IQRF_PGM_KEY_FILE_TYPE){
+                    if (MyCodeFileInfo.FileSize != 16) Message = CCP_FILE_FORMAT_ERR;
                     else{
-                      Serial.println();
-                      sysMsgPrinter(CCP_CODE_WRITE_ERR);
+                        iqrfSuspendDriver();
+                        for (Cnt=0; Cnt<16; Cnt++){
+                            UserBuffer[Cnt] = iqrfPgmReadByteFromFile();
+                        }
+                        iqrfRunDriver();
+                        sysMsgPrinter(CCP_UPLOADING);    // message "Uploading..."
+                        // write user password of user key to TR module
+                        while ((TempVariable = iqrfPgmWriteKeyOrPass(MyCodeFileInfo.FileType, UserBuffer)) == 0);
+                        // check result of programming operation
+                        if (TempVariable == IQRF_PGM_SUCCESS) Message = CCP_FILE_WRITE_OK;
+                        else Message = CCP_PROGRAMMING_ERR;
                     }
+                    sysMsgPrinter(Message);
                 }
                 else{
-                    // if format of code file is wrong, print error msg
-                    sysMsgPrinter(CCP_CODE_FILE_ERR);
+                    sysMsgPrinter(CCP_CHECKING);
+                    // check if code file is correct
+                    while ((TempVariable = iqrfPgmCheckCodeFile(&MyCodeFileInfo)) <= 100);
+                    // if format of code file is correct
+                    if (TempVariable == IQRF_PGM_SUCCESS){
+                        sysMsgPrinter(CCP_CODE_FILE_OK);
+                        // rewind code file
+                        iqrfSuspendDriver();
+                        CodeFile.seek(0);
+                        iqrfRunDriver();
+
+                        sysMsgPrinter(CCP_UPLOADING);    // message "Uploading..."
+                        strcpy_P(Filename, ProgressBar);
+                        Serial.print(Filename);
+                        StoreProgress = 0;
+                        // write code file to TR module
+                        while ((TempVariable = iqrfPgmWriteCodeFile(&MyCodeFileInfo)) <= 100){
+                            // during code file storing, print progress bar
+                            while (StoreProgress < TempVariable/10){
+                                Serial.write('*');
+                                StoreProgress++;
+                            }
+                        }
+                        // if code file written OK
+                        if (TempVariable == IQRF_PGM_SUCCESS){
+                            while (StoreProgress < 10){
+                               Serial.write('*');
+                               StoreProgress++;
+                           }
+                           Serial.println();
+                           sysMsgPrinter(CCP_FILE_WRITE_OK);
+                        }
+                        else{
+                          Serial.println();
+                          sysMsgPrinter(CCP_PROGRAMMING_ERR);
+                        }
+                    }
+                    else{
+                        // if format of code file is wrong, print error msg
+                        sysMsgPrinter(CCP_FILE_FORMAT_ERR);
+                    }
                 }
                 CodeFile.close();      // close file
             }
