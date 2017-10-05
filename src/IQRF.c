@@ -278,7 +278,6 @@ uint8_t iqrfGetTxBufferStatus(void)
  */
 void iqrfSpiDriver(void)
 {
-
     // is anything to send / receive
     if (IqrfControl.Status != IQRF_READY) {
         IqrfSpiControl.PacketRxBuffer[IqrfSpiControl.PacketCnt] = iqrfSendSpiByte(IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.PacketCnt]);
@@ -370,7 +369,8 @@ void iqrfSpiDriver(void)
  * @param DataLength Data length
  * @return CRC
  */
-uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength) {
+uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength)
+{
     uint8_t Crc = 0x5F;
     for (uint8_t I = 0; I < (DataLength + 2); I++) {
         Crc ^= Buffer[I];
@@ -386,7 +386,8 @@ uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength) {
  * @param type Ptype
  * @return boolean
  */
-bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype) {
+bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype)
+{
     uint8_t Crc = 0x5F ^ Ptype;
     for (uint8_t I = 2; I < (DataLength + 2); I++) {
         Crc ^= Buffer[I];

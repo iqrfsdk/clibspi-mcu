@@ -265,7 +265,7 @@ uint8_t iqrfPgmWriteCodeFile(void)
         break;
     }
 
-  	// return TR module programing state in %
+    // return TR module programing state in %
     return(((uint32_t) CodeFileInfo.FileByteCnt * 100) / CodeFileInfo.FileSize);
 }
 
@@ -629,7 +629,6 @@ uint8_t iqrfPgmConvertToNum(uint8_t dataByteHi, uint8_t dataByteLo)
  */
 uint8_t iqrfPgmReadIQRFFileLine(void)
 {
-
     uint8_t FirstChar;
     uint8_t SecondChar;
     uint8_t CodeLineBufferPtr = 0;
