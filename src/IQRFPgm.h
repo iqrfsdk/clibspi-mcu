@@ -1,9 +1,9 @@
 ﻿/**
  * @file IQRF SPI support library (firmware and config programmer extension)
- * @author Dušan Machút <dusan.machut@gmail.com>
+ * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
- * @author Roman Ondráček <ondracek.roman@centrum.cz>
- * @version 2.0
+ * @author Roman Ondráček <roman.ondracek@iqrf.com>
+ * @version 3.0.0
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *
@@ -22,6 +22,10 @@
 
 #ifndef _IQRF_PGM_H
 #define _IQRF_PGM_H
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stddef.h>
@@ -63,25 +67,17 @@
 #define ACCESS_PASSWORD_CFG_ADR       0xD0
 #define USER_KEY_CFG_ADR              0xD1
 
-typedef struct {
-    uint16_t FileByteCnt;             // size of code file on SD card
-    uint16_t FileSize;                // size of code file on SD card
-    uint8_t FileType;                 // file type (HEX / IQRF)
-}IQRF_PGM_FILE_INFO;
-
 /**
  * Checking the format accuracy of the programing file
- * @param FileInfo pointer to structure with information about programmed file
  * @return result of partial checking operation
  */
-uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo);
+uint8_t iqrfPgmCheckCodeFile(void);
 
 /**
  * Core programming function
- * @param FileInfo pointer to structure with information about programmed file
  * @return result of partial programming operation
  */
-uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo);
+uint8_t iqrfPgmWriteCodeFile(void);
 
 /**
  * Core programming function for user password or user key
@@ -90,5 +86,9 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo);
  * @return result of partial programming operation
  */
 uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

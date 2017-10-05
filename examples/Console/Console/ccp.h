@@ -1,9 +1,9 @@
 ﻿/**
  * @file Arduino console command processor
- * @author Dušan Machút <dusan.machut@gmail.com>
+ * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
- * @author Roman Ondráček <ondracek.roman@centrum.cz>
- * @version 1.2
+ * @author Roman Ondráček <roman.ondracek@iqrf.com>
+ * @version 1.2.0
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *

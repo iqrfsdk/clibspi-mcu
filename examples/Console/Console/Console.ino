@@ -42,8 +42,8 @@
  */
 uint8_t   SDCardReady;
 uint8_t   UserBuffer[16];
-File CodeFile;
-IQRF_PGM_FILE_INFO  MyCodeFileInfo;
+
+extern File CodeFile;
 
 /**
  * Setup peripherals
@@ -54,9 +54,10 @@ void setup()
     while (!Serial);
 
     SDCardReady = SD.begin(SD_SS);          // initialize SD card
-    SPI.end();
+    SPI.end();                              // end SPI peripheral initialized by SD card library
 
-    iqrfInit(myIqrfRxFunc);                 // initialize DPA library
+    SPI.begin();                            // start SPI peripheral for IQRF library
+    iqrfInit(myIqrfRxFunc);                 // initialize IQRF library
 
     Serial.println();
 }
@@ -95,22 +96,6 @@ char bToHexa_low(uint8_t B)
 {
   B &= 0x0F;
   return (B>0x9) ? B+'A'-10:B+'0';
-}
-
-/**
- * Read byte from code file
- *
- * @param - none
- * @return - byte from firmware file or 0 = end of file
- *
- */
-uint8_t iqrfPgmReadByteFromFile(void)
-{
-    if (CodeFile.available()){
-        MyCodeFileInfo.FileByteCnt++;
-        return (CodeFile.read());
-    }
-    else return(0);
 }
 
 
@@ -322,27 +307,27 @@ void ccpPgmFile(uint16_t CommandParameter)
             // check type of file
             if (strcmp("iqrf",CcpCommandParameter)==0){
                 // set PLUGIN filetype
-                MyCodeFileInfo.FileType = IQRF_PGM_PLUGIN_FILE_TYPE;
+                CodeFileInfo.FileType = IQRF_PGM_PLUGIN_FILE_TYPE;
             }
             else{
                 if (strcmp("hex",CcpCommandParameter)==0){
                     // set HEX filetype
-                    MyCodeFileInfo.FileType = IQRF_PGM_HEX_FILE_TYPE;
+                    CodeFileInfo.FileType = IQRF_PGM_HEX_FILE_TYPE;
                 }
                 else{
                     if (strcmp("trcnfg",CcpCommandParameter)==0){
                         // set TRCNFG filetype
-                        MyCodeFileInfo.FileType = IQRF_PGM_CFG_FILE_TYPE;
+                        CodeFileInfo.FileType = IQRF_PGM_CFG_FILE_TYPE;
                     }
                     else{
                         if (strcmp("pass",CcpCommandParameter)==0){
                             // set USER PASSWORD filetype
-                            MyCodeFileInfo.FileType = IQRF_PGM_PASS_FILE_TYPE;
+                            CodeFileInfo.FileType = IQRF_PGM_PASS_FILE_TYPE;
                         }
                         else{
                             if (strcmp("key",CcpCommandParameter)==0){
                                 // set USER KEY filetype
-                                MyCodeFileInfo.FileType = IQRF_PGM_KEY_FILE_TYPE;
+                                CodeFileInfo.FileType = IQRF_PGM_KEY_FILE_TYPE;
                             }
                             else Message = CCP_BAD_PARAMETER;
                         }
@@ -371,18 +356,18 @@ void ccpPgmFile(uint16_t CommandParameter)
             // if code file exist
             if (CodeFile){
                 // read size of file
-                MyCodeFileInfo.FileSize = CodeFile.size();
-                if (MyCodeFileInfo.FileType == IQRF_PGM_PASS_FILE_TYPE || MyCodeFileInfo.FileType == IQRF_PGM_KEY_FILE_TYPE){
-                    if (MyCodeFileInfo.FileSize != 16) Message = CCP_FILE_FORMAT_ERR;
+                CodeFileInfo.FileSize = CodeFile.size();
+                if (CodeFileInfo.FileType == IQRF_PGM_PASS_FILE_TYPE || CodeFileInfo.FileType == IQRF_PGM_KEY_FILE_TYPE){
+                    if (CodeFileInfo.FileSize != 16) Message = CCP_FILE_FORMAT_ERR;
                     else{
                         iqrfSuspendDriver();
                         for (Cnt=0; Cnt<16; Cnt++){
-                            UserBuffer[Cnt] = iqrfPgmReadByteFromFile();
+                            UserBuffer[Cnt] = iqrfReadByteFromFile();
                         }
                         iqrfRunDriver();
                         sysMsgPrinter(CCP_UPLOADING);    // message "Uploading..."
                         // write user password of user key to TR module
-                        while ((TempVariable = iqrfPgmWriteKeyOrPass(MyCodeFileInfo.FileType, UserBuffer)) == 0);
+                        while ((TempVariable = iqrfPgmWriteKeyOrPass(CodeFileInfo.FileType, UserBuffer)) == 0);
                         // check result of programming operation
                         if (TempVariable == IQRF_PGM_SUCCESS) Message = CCP_FILE_WRITE_OK;
                         else Message = CCP_PROGRAMMING_ERR;
@@ -392,7 +377,7 @@ void ccpPgmFile(uint16_t CommandParameter)
                 else{
                     sysMsgPrinter(CCP_CHECKING);
                     // check if code file is correct
-                    while ((TempVariable = iqrfPgmCheckCodeFile(&MyCodeFileInfo)) <= 100);
+                    while ((TempVariable = iqrfPgmCheckCodeFile()) <= 100);
                     // if format of code file is correct
                     if (TempVariable == IQRF_PGM_SUCCESS){
                         sysMsgPrinter(CCP_CODE_FILE_OK);
@@ -406,7 +391,7 @@ void ccpPgmFile(uint16_t CommandParameter)
                         Serial.print(Filename);
                         StoreProgress = 0;
                         // write code file to TR module
-                        while ((TempVariable = iqrfPgmWriteCodeFile(&MyCodeFileInfo)) <= 100){
+                        while ((TempVariable = iqrfPgmWriteCodeFile()) <= 100){
                             // during code file storing, print progress bar
                             while (StoreProgress < TempVariable/10){
                                 Serial.write('*');
