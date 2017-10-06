@@ -14,9 +14,25 @@ Targeted for Arduino boards.
 - please, refer to current IQRF Startup Package for updated IQRF SPI specification
 
 ## Integration
+If the user wishes to use the services of the library, the files [```IQRF.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.c), [```IQRF.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.h), [```IQRFPgm.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.c), [```IQRFPgm.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.h), [```IQRFPort.cpp```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.cpp) and [```IQRFPort.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.h) must be included in user's project. If the user does not need programming features for the TR module, the files ```IQRFPgm.c``` and ```IQRFPgm.h``` are not required. The ```IQRFPort.cpp``` and ```IQRFPort.h``` files are platform-dependent and contain a platform interface for a platform-independent library core. If the library is used on a different platform than Arduino, the user must modify the IQRFPort.cpp and IQRFPort.h files for the platform used. The following macros and functions must be modified.
+
+**MACROS**
+-   ```#define iqrfGetSysTick()``` - Get the system timer value (SysTick)
+-   ```#define TICKS_IN_SECOND``` - Frequency of the system timer in Hz
+-   ```#define iqrfDelayMs(T)``` - Delay function. Time ```T``` in ms
+
+**FUNCTIONS**
+-   ```void iqrfKernelTimingInit(void)``` - Initialize timer to 1000ms period. In interrupt service rutine of timer, call the IQRF SPI communication driver ```void iqrfDriver(void)```
+-   ```void iqrfKernelTimingFastMode(void)``` - Change the timer period to 200us (time interval for fast SPI communication for TR-7xD modules)
+-   ```void iqrfTrPowerOff(void)``` - Turn OFF power supply of TR module
+-   ```void iqrfTrPowerOn(void)``` - Turn ON power supply of TR module
+-   ```void iqrfTrEnterPgmMode(void)``` - Switch TR module to programming mode
+-   ```uint8_t iqrfSendSpiByte(uint8_t Tx_Byte)``` - Send / receive one byte to / from TR module over SPI bus
+-   ```void iqrfDeselectTRmodule(void)``` - Deactivate selection signal of TR module
+-   ```uint8_t iqrfReadByteFromFile(void)``` - Read one byte from the currently open file, with the new code for TR module
 
 ## API functions
--   ```void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)``` - ```UserIqrfRxHandler``` is pointer on the user's callback function to process the received packet
+-   ```void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)``` - Initialize IQRF SPI communication library. ```UserIqrfRxHandler``` is pointer on the user's callback function to process the received packet
 -   ```uint8_t iqrfSendData(uint8_t *DataBuffer, uint8_t DataLength)``` - The function sends the data packet to TR module via SPI interface. The user fills the ```DataBuffer``` with its data and defines size of data packet. The function must be called periodically, if returns code ```IQRF_OPERATION_IN_PROGRESS```. Periodically function calling is necessary end, when returns one of the following return codes:
     -   ```IQRF_OPERATION_OK``` - operation OK, data sent successfully
     -   ```IQRF_TR_MODULE_WRITE_ERR```  - operation ERROR, data not sent
@@ -24,8 +40,8 @@ Targeted for Arduino boards.
     -   ```IQRF_TR_MODULE_NOT_READY```  - operation ERROR, TR module is not ready   
     
 -   ```void iqrfSendPacket(uint8_t SpiCmd, uint8_t *UserDataBuffer, uint8_t UserDataLength)``` - The function will start the process of sending the packet to the TR module. The packet is sent in the background, by the IQRF SPI communications driver. The user set the ```SpiCmd``` command (see IQRF SPI specification), fills ```UserDataBuffer```  with its data and defines size of data packet. Before calling the function, check the IQRF broadcast buffer status. Use the ```uint8_t iqrfGetTxBufferStatus(void)``` function, to do this.
--   ```void iqrfSuspendDriver(void)``` - Temporary suspend IQRF comunication driver
--   ```void iqrfRunDriver(void)``` - Run suspended IQRF communication driver
+-   ```void iqrfSuspendDriver(void)``` - Temporary suspend IQRF SPI comunication driver
+-   ```void iqrfRunDriver(void)``` - Run suspended IQRF SPI communication driver
 -   ```void iqrfTrPowerOff(void)``` - Turn OFF power supply of TR module
 -   ```void iqrfTrPowerOn(void)``` - Turn ON power supply of TR module
 -   ```void iqrfTrReset(void)``` - Reset TR module
