@@ -14,7 +14,7 @@ Targeted for Arduino boards.
 - please, refer to current IQRF Startup Package for updated IQRF SPI specification
 
 ## Integration
-If the user wishes to use the services of the library, the files [```IQRF.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.c), [```IQRF.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.h), [```IQRFPgm.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.c), [```IQRFPgm.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.h), [```IQRFPort.cpp```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.cpp) and [```IQRFPort.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.h) must be included in user's project. If the user does not need programming features for the TR module, the files ```IQRFPgm.c``` and ```IQRFPgm.h``` are not required. The ```IQRFPort.cpp``` and ```IQRFPort.h``` files are platform-dependent and contain a platform interface for a platform-independent library core. If the library is used on a different platform than Arduino, the user must modify the IQRFPort.cpp and IQRFPort.h files for the platform used. The following macros and functions must be modified.
+If the user wishes to use the services of the library, the files [```IQRF.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.c), [```IQRF.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRF.h), [```IQRFPgm.c```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.c), [```IQRFPgm.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPgm.h), [```IQRFPort.cpp```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.cpp) and [```IQRFPort.h```](https://github.com/MacHut-coder/clibspi-mcu/blob/master/src/IQRFPort.h) must be included in user's project. If the user does not need programming features for the TR module, the files ```IQRFPgm.c``` and ```IQRFPgm.h``` are not required. The ```IQRFPort.cpp``` and ```IQRFPort.h``` files are platform-dependent and contain a platform interface for a platform-independent library core. If the library is used on a different platform than Arduino, the user must modify the ```IQRFPort.cpp``` and ```IQRFPort.h``` files for the platform used. The following macros and functions must be modified.
 
 **MACROS**
 -   ```#define iqrfGetSysTick()``` - Get the system timer value (SysTick)
@@ -22,7 +22,7 @@ If the user wishes to use the services of the library, the files [```IQRF.c```](
 -   ```#define iqrfDelayMs(T)``` - Delay function. Time ```T``` in ms
 
 **FUNCTIONS**
--   ```void iqrfKernelTimingInit(void)``` - Initialize timer to 1000ms period. In interrupt service rutine of timer, call the IQRF SPI communication driver ```void iqrfDriver(void)```
+-   ```void iqrfKernelTimingInit(void)``` - Initialize timer to 1000us period. In interrupt service rutine of timer, call the IQRF SPI communication driver ```void iqrfDriver(void)```
 -   ```void iqrfKernelTimingFastMode(void)``` - Change the timer period to 200us (time interval for fast SPI communication for TR-7xD modules)
 -   ```void iqrfTrPowerOff(void)``` - Turn OFF power supply of TR module
 -   ```void iqrfTrPowerOn(void)``` - Turn ON power supply of TR module
