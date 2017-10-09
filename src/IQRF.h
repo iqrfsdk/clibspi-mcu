@@ -1,9 +1,9 @@
 ﻿/**
  * @file IQRF SPI support library
- * @author Dušan Machút <dusan.machut@gmail.com>
+ * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
- * @author Roman Ondráček <ondracek.roman@centrum.cz>
- * @version 2.0
+ * @author Roman Ondráček <roman.ondracek@iqrf.com>
+ * @version 3.0.0
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *
@@ -29,7 +29,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "IQRFPorts.h"
+#include "IQRFPort.h"
 
 // iqrfSendData(...  ) function return codes
 #define IQRF_OPERATION_OK             0
@@ -109,22 +109,13 @@ typedef struct{                           // TR module info structure
     uint8_t	  ModuleInfoRawData[8];
 } T_TR_INFO_STRUCT;
 
-
-typedef void (*T_IQRF_RX_HANDLER)(uint8_t *DataBuffer, uint8_t DataSize);
-
 extern T_TR_INFO_STRUCT	  IqrfTrInfoStruct;
-
 
 /**
  * Function initialize IQRF SPI support library
  * @param UserIqrfRxHandler Pointer to user call back function for received packets service
  */
 void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler);
-
-/**
- * Function provides background communication with TR module
- */
-void iqrfDriver(void);
 
 /**
  * Sends IQRF data packet to TR module
@@ -156,21 +147,6 @@ void iqrfRunDriver(void);
  * reset TR module
  */
 void iqrfTrReset(void);
-
-/**
- * turn OFF power supply of TR module
- */
-void iqrfTrPowerOff(void);
-
-/**
- * turn ON power supply of TR module
- */
-void iqrfTrPowerOn(void);
-
-/**
- * switch TR module to programming mode
- */
-void iqrfTrEnterPgmMode(void);
 
 /**
  * end of programming mode

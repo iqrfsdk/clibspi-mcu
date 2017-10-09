@@ -1,9 +1,9 @@
 ﻿/**
  * @file IQRF SPI support library
- * @author Dušan Machút <dusan.machut@gmail.com>
+ * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
- * @author Roman Ondráček <ondracek.roman@centrum.cz>
- * @version 2.0
+ * @author Roman Ondráček <roman.ondracek@iqrf.com>
+ * @version 3.0.0
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *
@@ -21,18 +21,7 @@
  */
 #include <Arduino.h>
 #include <ctype.h>
-#include <SPI.h>
-#include <TimerOne.h>
 #include "IQRF.h"
-
-typedef struct {
-    volatile uint8_t Status;
-    uint8_t SuspendFlag;
-    uint8_t TRmoduleSelected;
-    uint8_t FastSPI;
-    uint8_t TimeCnt;
-    T_IQRF_RX_HANDLER IqrfRxHandler;
-} T_IQRF_CONTROL;
 
 #define IQRF_PKT_SIZE             68
 
@@ -60,7 +49,7 @@ typedef struct{
 
 #define SPI_STATUS_POOLING_TIME   10        // SPI status pooling time 10ms
 
-#define IQRF_SM_PREPARE_REQUEST       0     // internal states of DPA operation state machine
+#define IQRF_SM_PREPARE_REQUEST       0     // internal states of IQRF operation state machine
 #define IQRF_SM_SEND_REQUEST          1
 #define IQRF_SM_PROCESS_REQUEST       2
 #define IQRF_SM_REQUEST_OK            3
@@ -71,18 +60,13 @@ typedef struct{
 #define IQRF_WRITE                    0x02  // IQRF write request processing
 
 /* Function prototypes */
-void iqrfDeselectTRmodule(void);
-void iqrfTrPowerOn(void);
-void iqrfTrPowerOff(void);
 void iqrfSpiDriver(void);
 uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength);
 bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype);
-void iqrfSendPacket(uint8_t SpiCmd, uint8_t *UserDataBuffer, uint8_t UserDataLength);
 void iqrfTrInfoTask(void);
 void iqrfTrInfoProcess(uint8_t *DataBuffer, uint8_t DataSize);
 
 /* Public variable declarations */
-T_IQRF_CONTROL IqrfControl;
 T_IQRF_SPI_CONTROL IqrfSpiControl;
 volatile T_IQRF_PACKET IqrfPacket;
 T_TR_INFO_STRUCT	IqrfTrInfoStruct;
@@ -96,7 +80,7 @@ volatile uint8_t IqrfTrInfoReading;
  */
 void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)
 {
-    IqrfControl.SuspendFlag = false;
+    IqrfControl.SuspendFlag = false;                    //  initialize library variables
     IqrfControl.Status = IQRF_READY;
     IqrfControl.FastSPI = false;
     IqrfControl.TimeCnt = SPI_STATUS_POOLING_TIME;
@@ -105,24 +89,20 @@ void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)
 
     iqrfTrPowerOn();                                     // turn power on for TR module
 
-    SPI.begin();                                         // start SPI peripheral
+    iqrfKernelTimingInit();                              // initialize IQRF SPI keknel timing
 
-    Timer1.initialize(1000);                             // initialize timer1, call IQRF driver every 1000us
-    Timer1.attachInterrupt(iqrfDriver);                  // attaches callback() as a timer overflow interrupt
-
+    // read TR module info
     IqrfTrInfoReading = 2;
     while(IqrfTrInfoReading){
         iqrfTrInfoTask();
     }
 
+    // if conected TR module suports fast SPI mode
     if (iqrfGetModuleType() == TR_72D || iqrfGetModuleType() == TR_76D){
-        Timer1.stop();
-        IqrfControl.FastSPI = true;
-        Timer1.setPeriod(200);
-        Timer1.start();
+        iqrfKernelTimingFastMode();                     // switch to fast SPI mode
     }
 
-    IqrfControl.IqrfRxHandler = UserIqrfRxHandler;
+    IqrfControl.IqrfRxHandler = UserIqrfRxHandler;      //  set user RX handler
 }
 
 /**
@@ -158,7 +138,7 @@ uint8_t iqrfSendData(uint8_t *DataBuffer, uint8_t DataLength)
     uint8_t OperationResult;
     uint8_t TempSize = DataLength;
 
-    // DPA operation state machine
+    // IQRF operation state machine
     switch (IqrfDataSenderSM) {
         case IQRF_SM_PREPARE_REQUEST:{
             if (IqrfSpiControl.SpiStat == SPI_DATA_TRANSFER) return (IQRF_OPERATION_IN_PROGRESS);
@@ -236,7 +216,7 @@ void iqrfSuspendDriver(void)
  */
 void iqrfRunDriver(void)
 {
-    // reenable DPA driver running
+    // reenable IQRF driver running
     IqrfControl.SuspendFlag = false;
 }
 
@@ -247,59 +227,9 @@ void iqrfRunDriver(void)
 void iqrfTrReset(void)
 {
     iqrfTrPowerOff();
-    delay(100);
+    iqrfDelayMs(100);
     iqrfTrPowerOn();
-    delay(1);
-}
-
-
-/**
- * turn OFF power supply of TR module
- */
-void iqrfTrPowerOff(void)
-{
-    pinMode(TR_SS_PIN, OUTPUT);
-    pinMode(TR_PWRCTRL_PIN, OUTPUT);
-    digitalWrite(TR_SS_PIN, LOW);
-    digitalWrite(TR_PWRCTRL_PIN, HIGH);
-}
-
-
-/**
- * turn ON power supply of TR module
- */
-void iqrfTrPowerOn(void)
-{
-    pinMode(TR_SS_PIN, OUTPUT);
-    pinMode(TR_PWRCTRL_PIN, OUTPUT);
-    digitalWrite(TR_SS_PIN, HIGH);
-    digitalWrite(TR_PWRCTRL_PIN, LOW);
-}
-
-
-/**
- * switch TR module to programming mode
- */
-void iqrfTrEnterPgmMode(void)
-{
-    delay(200);
-    iqrfSuspendDriver();
-    SPI.end();
-    pinMode(TR_MOSI_PIN, OUTPUT);
-    pinMode(TR_MISO_PIN, INPUT);
-    pinMode(TR_SCK_PIN, OUTPUT);
-    digitalWrite(TR_SCK_PIN, LOW);
-    digitalWrite(TR_MOSI_PIN, LOW);
-    iqrfTrReset();
-    digitalWrite(TR_SS_PIN, LOW);
-    unsigned long enterMs = millis();
-    do {
-        // Copy MOSI to MISO for approx. 500ms => TR into programming mode
-        digitalWrite(TR_MOSI_PIN, digitalRead(TR_MISO_PIN));
-    } while ((millis() - enterMs) < 500);
-    digitalWrite(TR_SS_PIN, HIGH);
-    SPI.begin();
-    iqrfRunDriver();
+    iqrfDelayMs(1);
 }
 
 
@@ -309,7 +239,7 @@ void iqrfTrEnterPgmMode(void)
 void iqrfTrEndPgmMode(void)
 {
     iqrfTrReset();
-    delay(200);
+    iqrfDelayMs(200);
 }
 
 
@@ -342,52 +272,12 @@ uint8_t iqrfGetTxBufferStatus(void)
     return(IqrfPacket.BufferFlag);
 }
 
-/**
- * Send byte over SPI
- *
- * @param Tx_Byte to send
- * @return Received Rx_Byte
- *
- */
-uint8_t iqrfSendSpiByte(uint8_t Tx_Byte)
-{
-    uint8_t Rx_Byte;
-
-    if (!IqrfControl.TRmoduleSelected){
-        SPI.beginTransaction(SPISettings(250000, MSBFIRST, SPI_MODE0));
-        IqrfControl.TRmoduleSelected = true;
-        digitalWrite(TR_SS_PIN, LOW);
-        delayMicroseconds(15);
-    }
-
-    Rx_Byte = SPI.transfer(Tx_Byte);
-
-    if (IqrfControl.FastSPI == false){
-        delayMicroseconds(15);
-        iqrfDeselectTRmodule();
-    }
-
-    return Rx_Byte;
-}
-
-
-/**
- * Deselect TR module
- */
-void iqrfDeselectTRmodule(void)
-{
-    digitalWrite(TR_SS_PIN, HIGH);
-    IqrfControl.TRmoduleSelected = false;
-    SPI.endTransaction();
-}
-
 
 /**
  * Function implements IQRF packet communication over SPI with TR module
  */
 void iqrfSpiDriver(void)
 {
-
     // is anything to send / receive
     if (IqrfControl.Status != IQRF_READY) {
         IqrfSpiControl.PacketRxBuffer[IqrfSpiControl.PacketCnt] = iqrfSendSpiByte(IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.PacketCnt]);
@@ -479,7 +369,8 @@ void iqrfSpiDriver(void)
  * @param DataLength Data length
  * @return CRC
  */
-uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength) {
+uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength)
+{
     uint8_t Crc = 0x5F;
     for (uint8_t I = 0; I < (DataLength + 2); I++) {
         Crc ^= Buffer[I];
@@ -495,7 +386,8 @@ uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength) {
  * @param type Ptype
  * @return boolean
  */
-bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype) {
+bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype)
+{
     uint8_t Crc = 0x5F ^ Ptype;
     for (uint8_t I = 2; I < (DataLength + 2); I++) {
         Crc ^= Buffer[I];
@@ -518,7 +410,7 @@ void iqrfTrInfoTask(void)
 {
     static uint8_t DataToModule[16];
     static uint8_t Attempts;
-    static unsigned long TimeoutMilli;
+    static uint32_t SysTickTime;
 
     static enum {
         INIT_TASK = 0,
@@ -539,7 +431,7 @@ void iqrfTrInfoTask(void)
         break;
         case ENTER_PROG_MODE:
             iqrfTrEnterPgmMode();
-            TimeoutMilli = millis();
+            SysTickTime = iqrfGetSysTick();
             TrInfoTaskSM = SEND_REQUEST;
         break;
 
@@ -547,11 +439,11 @@ void iqrfTrInfoTask(void)
             if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY) {
                 iqrfSendPacket(SPI_MODULE_INFO, &DataToModule[0], 1);
                 // initialize timeout timer
-                TimeoutMilli = millis();
+                SysTickTime = iqrfGetSysTick();
                 TrInfoTaskSM = WAIT_INFO;
             }
             else {
-                if (millis() - TimeoutMilli >= 500) {
+                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
                     // in a case, try it twice to enter programming mode
                     if (Attempts) {
                         Attempts--;
@@ -566,7 +458,7 @@ void iqrfTrInfoTask(void)
         break;
         // wait for info data from TR module
         case WAIT_INFO:
-            if ((IqrfTrInfoReading == 1) || (millis() - TimeoutMilli >= 500)) {
+            if ((IqrfTrInfoReading == 1) || (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2))) {
                 // send end of PGM mode packet
                 iqrfTrEndPgmMode();
                 // next state

@@ -1,9 +1,9 @@
 ﻿/**
  * @file IQRF SPI support library (firmware and config programmer extension)
- * @author Dušan Machút <dusan.machut@gmail.com>
+ * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
- * @author Roman Ondráček <ondracek.roman@centrum.cz>
- * @version 2.0
+ * @author Roman Ondráček <roman.ondracek@iqrf.com>
+ * @version 3.0.0
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *
@@ -42,7 +42,6 @@ uint8_t iqrfPgmWriteKeyOrPass(uint8_t Selector, uint8_t *Buffer);
 uint8_t iqrfPgmProcessCfgFile(void);
 void iqrfPgmMoveOverflowedData(void);
 uint8_t iqrfPgmPrepareMemBlock(void);
-uint8_t iqrfPgmReadByteFromFile(void);
 uint8_t iqrfPgmReadIQRFFileLine(void);
 uint8_t iqrfPgmReadHEXFileLine(void);
 
@@ -52,10 +51,9 @@ PREPARE_MEM_BLOCK PrepareMemBlock;
 
 /**
  * Checking the format accuracy of the programing file
- * @param FileInfo pointer to structure with information about programmed file
  * @return result of partial checking operation
  */
-uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
+uint8_t iqrfPgmCheckCodeFile(void)
 {
     static enum {
         INIT_TASK = 0,
@@ -69,18 +67,18 @@ uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
     switch (CheckCodeTaskSM) {
         // initialize the checking process
         case INIT_TASK:{
-            FileInfo->FileByteCnt = 0;
-            if (FileInfo->FileType == IQRF_PGM_PLUGIN_FILE_TYPE){
+            CodeFileInfo.FileByteCnt = 0;
+            if (CodeFileInfo.FileType == IQRF_PGM_PLUGIN_FILE_TYPE){
                 CheckCodeTaskSM = CHECK_PLUGIN_CODE;
             }
             else{
                 PrepareMemBlock.DataInBufferReady = 0;
                 PrepareMemBlock.DataOverflow = 0;
-                if (FileInfo->FileType == IQRF_PGM_HEX_FILE_TYPE){
+                if (CodeFileInfo.FileType == IQRF_PGM_HEX_FILE_TYPE){
                     CheckCodeTaskSM = CHECK_HEX_CODE;
                 }
                 else{
-                    if (FileInfo->FileSize < 33) return(IQRF_PGM_ERROR);
+                    if (CodeFileInfo.FileSize < 33) return(IQRF_PGM_ERROR);
                     CheckCodeTaskSM = CHECK_CFG_CODE;
                 }
             }
@@ -109,7 +107,7 @@ uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
         // check if format of *.HEX of *.trcnfg file is correct
         case CHECK_HEX_CODE:
         case CHECK_CFG_CODE:{
-            if (FileInfo->FileType == IQRF_PGM_HEX_FILE_TYPE) OperationResult = iqrfPgmPrepareMemBlock();
+            if (CodeFileInfo.FileType == IQRF_PGM_HEX_FILE_TYPE) OperationResult = iqrfPgmPrepareMemBlock();
             else OperationResult = iqrfPgmProcessCfgFile();
             if (OperationResult != IQRF_PGM_FLASH_BLOCK_READY && OperationResult != IQRF_PGM_EEPROM_BLOCK_READY){
                 CheckCodeTaskSM = INIT_TASK;
@@ -120,15 +118,14 @@ uint8_t iqrfPgmCheckCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
     }
 
     // return file processing status in percent
-    return(((uint32_t) FileInfo->FileByteCnt * 100) / FileInfo->FileSize);
+    return(((uint32_t) CodeFileInfo.FileByteCnt * 100) / CodeFileInfo.FileSize);
 }
 
 /**
  * Core programming function
- * @param FileInfo pointer to structure with information about programmed file
  * @return result of partial programming operation
  */
-uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
+uint8_t iqrfPgmWriteCodeFile(void)
 {
     static enum {
         INIT_TASK = 0,
@@ -142,26 +139,26 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
 
     static uint8_t Attempts;
     static uint8_t OperationResult;
-    static uint32_t TimeoutMilli;
+    static uint32_t SysTickTime;
 
    	switch (WriteCodeTaskSM)
    	{
         case INIT_TASK:     // initialize programming state machine
             Attempts = 1;
-            FileInfo->FileByteCnt = 0;
+            CodeFileInfo.FileByteCnt = 0;
             WriteCodeTaskSM = ENTER_PROG_MODE;
         break;
 
         case ENTER_PROG_MODE:
             iqrfTrEnterPgmMode();
-            TimeoutMilli = millis();
+            SysTickTime = iqrfGetSysTick();
             WriteCodeTaskSM = WAIT_PROG_MODE;
         break;
 
         case WAIT_PROG_MODE:      // wait for TR module programming mode
             if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY) {
-                TimeoutMilli = millis();
-                if (FileInfo->FileType == IQRF_PGM_PLUGIN_FILE_TYPE){
+                SysTickTime = iqrfGetSysTick();
+                if (CodeFileInfo.FileType == IQRF_PGM_PLUGIN_FILE_TYPE){
                     WriteCodeTaskSM = WRITE_PLUGIN;
                 }
                 else{
@@ -172,7 +169,7 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
                 }
             }
             else {
-                if (millis() - TimeoutMilli >= 500) {
+                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
                     // in a case, try it twice to enter programming mode
                     if (Attempts) {
                         Attempts--;
@@ -193,23 +190,23 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
                 iqrfSuspendDriver();
                 Attempts = iqrfPgmReadIQRFFileLine();
                 iqrfRunDriver();
-                if (Attempts == 2){
+                if (Attempts == IQRF_PGM_FILE_DATA_ERROR){
                     OperationResult = IQRF_PGM_ERROR;
                     WriteCodeTaskSM = WAIT_PROG_END;                // goto end programming mode
                 }
                 else{
-                    if (Attempts == 1){
+                    if (Attempts == IQRF_PGM_END_OF_FILE){
                         OperationResult = IQRF_PGM_SUCCESS;
                         WriteCodeTaskSM = WAIT_PROG_END;            // goto end programming mode
                     }
                     else{
                         iqrfSendPacket(SPI_PLUGIN_PGM, IqrfPgmCodeLineBuffer, 20);  // send plugin PGM packet
-                        TimeoutMilli = millis();
+                        SysTickTime = iqrfGetSysTick();
                     }
                 }
             }
             else{
-                if (millis() - TimeoutMilli >= 500) {
+                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
                     iqrfTrReset();
                     OperationResult = IQRF_PGM_ERROR;
                     WriteCodeTaskSM = PROG_END;                       // goto end programming mode
@@ -221,7 +218,7 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
             // if no packet is pending to send to TR module
             if (iqrfGetTxBufferStatus() == IQRF_BUFFER_FREE && iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY){
                 if (PrepareMemBlock.MemoryBlockProcessState == 0){
-                    if (FileInfo->FileType == IQRF_PGM_HEX_FILE_TYPE) OperationResult = iqrfPgmPrepareMemBlock();
+                    if (CodeFileInfo.FileType == IQRF_PGM_HEX_FILE_TYPE) OperationResult = iqrfPgmPrepareMemBlock();
                     else OperationResult = iqrfPgmProcessCfgFile();
                     if (OperationResult != IQRF_PGM_FLASH_BLOCK_READY && OperationResult != IQRF_PGM_EEPROM_BLOCK_READY){
                         WriteCodeTaskSM = WAIT_PROG_END;            // goto end programming mode
@@ -239,12 +236,12 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
                     else{
                         iqrfSendPacket(SPI_EEPROM_PGM, (uint8_t *)&PrepareMemBlock.MemoryBlock[0], PrepareMemBlock.MemoryBlock[1] + 2);
                     }
-                    TimeoutMilli = millis();
+                    SysTickTime = iqrfGetSysTick();
                     PrepareMemBlock.MemoryBlockProcessState--;
                 }
             }
             else{
-                if (millis() - TimeoutMilli >= 500) {
+                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
                     iqrfTrReset();
                     OperationResult = IQRF_PGM_ERROR;
                     WriteCodeTaskSM = PROG_END;                       // goto end programming mode
@@ -268,8 +265,8 @@ uint8_t iqrfPgmWriteCodeFile(IQRF_PGM_FILE_INFO *FileInfo)
         break;
     }
 
-  	// return TR module programing state in %
-    return(((uint32_t) FileInfo->FileByteCnt * 100) / FileInfo->FileSize);
+    // return TR module programing state in %
+    return(((uint32_t) CodeFileInfo.FileByteCnt * 100) / CodeFileInfo.FileSize);
 }
 
 /**
@@ -290,7 +287,7 @@ uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer)
 
     static uint8_t Attempts;
     static uint8_t OperationResult;
-    static uint32_t TimeoutMilli;
+    static uint32_t SysTickTime;
 
    	switch (WriteCodeTaskSM)
    	{
@@ -305,7 +302,7 @@ uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer)
 
         case ENTER_PROG_MODE:
             iqrfTrEnterPgmMode();
-            TimeoutMilli = millis();
+            SysTickTime = iqrfGetSysTick();
             WriteCodeTaskSM = WAIT_PROG_MODE;
         break;
 
@@ -317,7 +314,7 @@ uint8_t iqrfPgmWriteKeyOrPass(uint8_t BufferContent, uint8_t *Buffer)
                 WriteCodeTaskSM = WAIT_PROG_END;            // goto end programming mode
             }
             else {
-                if (millis() - TimeoutMilli >= 500) {
+                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
                     // in a case, try it twice to enter programming mode
                     if (Attempts) {
                         Attempts--;
@@ -371,17 +368,17 @@ uint8_t iqrfPgmProcessCfgFile(void)
         for (uint8_t Cnt=0; Cnt<32; Cnt++){
             if (Cnt < 16){
                 // first half of configuration
-                PrepareMemBlock.MemoryBlock[Cnt*2 + 2] = iqrfPgmReadByteFromFile();
+                PrepareMemBlock.MemoryBlock[Cnt*2 + 2] = iqrfReadByteFromFile();
                 PrepareMemBlock.MemoryBlock[Cnt*2 + 3] = 0x34;
             }
             else{
                 // second half of configuration
-                PrepareMemBlock.MemoryBlock[Cnt*2 + 4] = iqrfPgmReadByteFromFile();
+                PrepareMemBlock.MemoryBlock[Cnt*2 + 4] = iqrfReadByteFromFile();
                 PrepareMemBlock.MemoryBlock[Cnt*2 + 5] = 0x34;
             }
         }
         // store last configuration byte for next packet
-        PrepareMemBlock.MemoryBlockNumber = iqrfPgmReadByteFromFile();
+        PrepareMemBlock.MemoryBlockNumber = iqrfReadByteFromFile();
         iqrfRunDriver();
 
         PrepareMemBlock.DataInBufferReady = 1;
@@ -632,25 +629,24 @@ uint8_t iqrfPgmConvertToNum(uint8_t dataByteHi, uint8_t dataByteLo)
  */
 uint8_t iqrfPgmReadIQRFFileLine(void)
 {
-
     uint8_t FirstChar;
     uint8_t SecondChar;
     uint8_t CodeLineBufferPtr = 0;
 
 repeat_read:
     // read one char from file
-    FirstChar = tolower(iqrfPgmReadByteFromFile());
+    FirstChar = tolower(iqrfReadByteFromFile());
 
     // read one char from file
     if (FirstChar == '#') {
         // read data to end of line
-        while (((FirstChar = iqrfPgmReadByteFromFile()) != 0) && (FirstChar != 0x0D));
+        while (((FirstChar = iqrfReadByteFromFile()) != 0) && (FirstChar != 0x0D));
     }
 
     // if end of line
     if (FirstChar == 0x0D) {
         // read second code 0x0A
-        iqrfPgmReadByteFromFile();
+        iqrfReadByteFromFile();
         if (CodeLineBufferPtr == 0) {
             // read another line
             goto repeat_read;
@@ -671,7 +667,7 @@ repeat_read:
     }
 
     // read second character from code file
-    SecondChar = tolower(iqrfPgmReadByteFromFile());
+    SecondChar = tolower(iqrfReadByteFromFile());
     if (CodeLineBufferPtr >= 20) return(IQRF_PGM_FILE_DATA_ERROR);
     // convert chars to number and store to buffer
     IqrfPgmCodeLineBuffer[CodeLineBufferPtr++] = iqrfPgmConvertToNum(FirstChar, SecondChar);
@@ -692,7 +688,7 @@ uint8_t iqrfPgmReadHEXFileLine(void)
     uint8_t CodeLineBufferCrc = 0;
 
     // find start of line or end of file
-    while (((Sign = iqrfPgmReadByteFromFile()) != 0) && (Sign != ':'));
+    while (((Sign = iqrfReadByteFromFile()) != 0) && (Sign != ':'));
     // if end of file
     if (Sign == 0) {
         return(IQRF_PGM_END_OF_FILE);
@@ -701,7 +697,7 @@ uint8_t iqrfPgmReadHEXFileLine(void)
     // read data to end of line and convert if to numbers
     for (;;) {
         // read High nibble
-        DataByteHi = tolower(iqrfPgmReadByteFromFile());
+        DataByteHi = tolower(iqrfReadByteFromFile());
         // check end of line
         if (DataByteHi == 0x0A || DataByteHi == 0x0D) {
             if (CodeLineBufferCrc != 0) {
@@ -712,7 +708,7 @@ uint8_t iqrfPgmReadHEXFileLine(void)
             return(IQRF_PGM_FILE_DATA_READY);
         }
         // read Low nibble
-        DataByteLo = tolower(iqrfPgmReadByteFromFile());
+        DataByteLo = tolower(iqrfReadByteFromFile());
         // convert two ascii to number
         DataByte = iqrfPgmConvertToNum(DataByteHi, DataByteLo);
         // add to Crc
