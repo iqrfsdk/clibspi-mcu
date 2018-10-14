@@ -7,7 +7,7 @@ Targeted for Arduino boards.
 
 **Supported IQRF OS version of the TR-7x module:**
 
-- IQRF OS v4.02D
+- IQRF OS v4.03D
 
 ## Documentation:
 
@@ -91,6 +91,8 @@ If the user wishes to use the services of the library, the files [```IQRF.c```](
 -   ```uint16_t iqrfGetFccStatus(void)``` - Get TR module FCC status. Function returns one of the following return codes:
     -   ```FCC_NOT_CERTIFIED```
     -   ```FCC_CERTIFIED```
+
+-   ```uint8_t iqrfGetModuleIbk(uint8_t Cnt)``` - Get specific byte of TR module IBK (Individual bonding key).
 
 -   ```uint8_t iqrfGetModuleInfoRawData(uint8_t Cnt)``` - Get specific byte of TR module identification RAW data.
 
