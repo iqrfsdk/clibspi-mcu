@@ -1,6 +1,6 @@
 
 /**
- * Copyright 2015-2017 IQRF Tech s.r.o.
+ * Copyright 2015-2018 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,8 @@ const char OSModuleType[] PROGMEM = {"Module type    : "};
 const char OSModuleMCU[] PROGMEM = {"Module MCU     : "};
 const char OSModuleId[] PROGMEM = {"Module ID      : "};
 const char OSModuleOsVer[] PROGMEM = {"OS version     : "};
-const char OSModuleFCC[] PROGMEM = {"Module FCC certification: "};
+const char OSModuleFCC[] PROGMEM = {"FCC certification: "};
+const char OSModuleIbk[] PROGMEM = {"Module IBK     : "};
 /**
  * Print results of trinfo command
  * @param infoBuffer buffer with TR module and OS information data
@@ -227,6 +228,27 @@ void ccpTrModuleInfo(uint16_t CommandParameter)
         strcpy_P(TempString, OSModuleId);
         Serial.print(TempString);
         Serial.println(iqrfGetModuleId(), HEX);
+
+        // print module IBK
+        strcpy_P(TempString, OSModuleIbk);
+        Serial.print(TempString);
+        I = iqrfGetOsVersion() >> 8;
+        // if OS version is 4.03 and more, print IBK
+        if ((I > 4) || ((I == 4) && ((iqrfGetOsVersion() & 0x00FF) >= 3))){
+            for (I=0; I<16; I++){
+                TempString[0] = bToHexa_high(iqrfGetModuleIbk(I));
+                TempString[1] = bToHexa_low(iqrfGetModuleIbk(I));
+                TempString[2] = 0x20;
+                TempString[3] = 0x00;
+                Serial.print(TempString);
+                if (I == 15){
+                    Serial.println();
+                }
+            }
+        }
+        else {
+            Serial.println("---");
+        }
 
         // print OS version string
         strcpy_P(TempString, OSModuleOsVer);

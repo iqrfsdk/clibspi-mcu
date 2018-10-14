@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/iqrfsdk/clibspi-mcu.git"
   },
-  "version": "3.0.0",
+  "version": "3.1.0",
   "license": "Apache-2.0",
   "authors": [{
     "name": "Dusan Machut",

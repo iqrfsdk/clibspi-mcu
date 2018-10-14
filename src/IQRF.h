@@ -3,9 +3,9 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.0.0
+ * @version 3.1.0
  *
- * Copyright 2015-2017 IQRF Tech s.r.o.
+ * Copyright 2015-2018 IQRF Tech s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,13 +100,14 @@ extern "C" {
 #define IQRF_BUFFER_BUSY            0x01  // buffer is bussy
 
 typedef struct{                           // TR module info structure
-    uint16_t	OsVersion;
-    uint16_t	OsBuild;
-    uint32_t	ModuleId;
-    uint16_t	McuType;
-    uint16_t  ModuleType;
-    uint16_t  Fcc;
-    uint8_t	  ModuleInfoRawData[8];
+    uint16_t    OsVersion;
+    uint16_t    OsBuild;
+    uint32_t    ModuleId;
+    uint16_t    McuType;
+    uint16_t    ModuleType;
+    uint16_t    Fcc;
+    uint8_t     Ibk[16];
+    uint8_t     ModuleInfoRawData[8];
 } T_TR_INFO_STRUCT;
 
 extern T_TR_INFO_STRUCT	  IqrfTrInfoStruct;
@@ -217,6 +218,11 @@ uint8_t iqrfGetTxBufferStatus(void);
  * Macro: return TR module FCC status
  */
 #define iqrfGetFccStatus()		IqrfTrInfoStruct.Fcc
+
+/**
+ * Macro: return specific byte of TR module IBK
+ */
+#define iqrfGetModuleIbk(x)	IqrfTrInfoStruct.Ibk[x]
 
 /**
  * Macro: return specific byte of TR module identification RAW data
