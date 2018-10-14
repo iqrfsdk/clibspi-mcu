@@ -128,7 +128,7 @@ If the user wishes to use the services of the library, the files [```IQRF.c```](
 ## License
 This library is licensed under Apache License 2.0:
 
- > Copyright 2015-2017 IQRF Tech s.r.o.
+ > Copyright 2015-2018 IQRF Tech s.r.o.
  >
  > Licensed under the Apache License, Version 2.0 (the "License");
  > you may not use this file except in compliance with the License.
