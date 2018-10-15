@@ -7,7 +7,7 @@ Targeted for Arduino boards.
 
 **Supported IQRF OS version of the TR-7x module:**
 
-- IQRF OS v4.02D
+- IQRF OS v4.03D
 
 ## Documentation:
 
@@ -92,6 +92,8 @@ If the user wishes to use the services of the library, the files [```IQRF.c```](
     -   ```FCC_NOT_CERTIFIED```
     -   ```FCC_CERTIFIED```
 
+-   ```uint8_t iqrfGetModuleIbk(uint8_t Cnt)``` - Get specific byte of TR module IBK (Individual bonding key).
+
 -   ```uint8_t iqrfGetModuleInfoRawData(uint8_t Cnt)``` - Get specific byte of TR module identification RAW data.
 
 -   ```uint8_t iqrfPgmCheckCodeFile(void)``` - The function checking the format accuracy of the programing file. Use of this function you can to see in the [```Console.ino```](https://github.com/iqrfsdk/clibspi-mcu/blob/master/examples/Console/Console/Console.ino) example file. The user opens the programming file and fills the structure ```IQRF_PGM_FILE_INFO  CodeFileInfo``` with informations about  programming file. The function must be called periodically if it returns the code in the range 0 to 100. Periodically function calling is necessary end, when returns one of the following return codes:
@@ -126,7 +128,7 @@ If the user wishes to use the services of the library, the files [```IQRF.c```](
 ## License
 This library is licensed under Apache License 2.0:
 
- > Copyright 2015-2017 IQRF Tech s.r.o.
+ > Copyright 2015-2018 IQRF Tech s.r.o.
  >
  > Licensed under the Apache License, Version 2.0 (the "License");
  > you may not use this file except in compliance with the License.
