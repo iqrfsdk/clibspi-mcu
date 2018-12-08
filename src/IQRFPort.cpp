@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.1.0
+ * @version 3.1.1
  *
  * Copyright 2015-2018 IQRF Tech s.r.o.
  *
@@ -128,7 +128,7 @@ uint8_t iqrfSendSpiByte(uint8_t Tx_Byte)
 {
     uint8_t Rx_Byte;
 
-    if (!IqrfControl.TRmoduleSelected){
+    if (!IqrfControl.TRmoduleSelected) {
         SPI.beginTransaction(SPISettings(250000, MSBFIRST, SPI_MODE0));
         IqrfControl.TRmoduleSelected = true;
         digitalWrite(TR_SS_PIN, LOW);
@@ -137,12 +137,12 @@ uint8_t iqrfSendSpiByte(uint8_t Tx_Byte)
 
     Rx_Byte = SPI.transfer(Tx_Byte);
 
-    if (IqrfControl.FastSPI == false){
+    if (IqrfControl.FastSPI == false) {
         delayMicroseconds(15);
         iqrfDeselectTRmodule();
     }
 
-    return Rx_Byte;
+    return (Rx_Byte);
 }
 
 
@@ -155,9 +155,10 @@ uint8_t iqrfSendSpiByte(uint8_t Tx_Byte)
  */
 uint8_t iqrfReadByteFromFile(void)
 {
-    if (CodeFile.available()){
+    if (CodeFile.available()) {
         CodeFileInfo.FileByteCnt++;
         return (CodeFile.read());
+    } else {
+        return(0);
     }
-    else return(0);
 }

@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.1.0
+ * @version 3.1.1
  *
  * Copyright 2015-2018 IQRF Tech s.r.o.
  *
@@ -53,7 +53,7 @@ typedef struct {
     uint16_t FileByteCnt;             // size of code file on SD card
     uint16_t FileSize;                // size of code file on SD card
     uint8_t FileType;                 // file type (HEX / IQRF)
-}IQRF_PGM_FILE_INFO;
+} IQRF_PGM_FILE_INFO;
 
 typedef void (*T_IQRF_RX_HANDLER)(uint8_t *DataBuffer, uint8_t DataSize);
 

@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.1.0
+ * @version 3.1.1
  *
  * Copyright 2015-2018 IQRF Tech s.r.o.
  *
@@ -55,10 +55,9 @@ extern "C" {
 #define TR_56D                        10
 #define TR_76D                        11
 
-// FCC cerificate
+// FCC certificate
 #define FCC_NOT_CERTIFIED             0
 #define FCC_CERTIFIED                 1
-
 
 //******************************************************************************
 //		 	SPI status of TR module (see IQRF SPI user manual)
@@ -97,7 +96,7 @@ extern "C" {
 //		 	status of IQRF SPI library TX buffer
 //******************************************************************************
 #define IQRF_BUFFER_FREE            0x00  // buffer is ready for new packet
-#define IQRF_BUFFER_BUSY            0x01  // buffer is bussy
+#define IQRF_BUFFER_BUSY            0x01  // buffer is busy
 
 typedef struct{                           // TR module info structure
     uint16_t    OsVersion;
@@ -135,12 +134,12 @@ uint8_t iqrfSendData(uint8_t *DataBuffer, uint8_t DataLength);
 void iqrfSendPacket(uint8_t SpiCmd, uint8_t *UserDataBuffer, uint8_t UserDataLength);
 
 /**
- * Temporary suspend IQRF comunication driver
+ * Temporary suspend IQRF communication driver
  */
 void iqrfSuspendDriver(void);
 
 /**
- * Run IQRF comunication driver
+ * Run IQRF communication driver
  */
 void iqrfRunDriver(void);
 

@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.1.0
+ * @version 3.1.1
  *
  * Copyright 2015-2018 IQRF Tech s.r.o.
  *
@@ -40,7 +40,7 @@ typedef struct { // SPI interface control structure
     uint8_t PacketRxBuffer[IQRF_PKT_SIZE];
 } T_IQRF_SPI_CONTROL;
 
-typedef struct{
+typedef struct {
     uint8_t BufferFlag;
     uint8_t SpiCmd;
     uint8_t *DataBuffer;
@@ -89,18 +89,16 @@ void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)
 
     iqrfTrPowerOn();                                     // turn power on for TR module
 
-    iqrfKernelTimingInit();                              // initialize IQRF SPI keknel timing
+    iqrfKernelTimingInit();                              // initialize IQRF SPI kernel timing
 
     // read TR module info
     IqrfTrInfoReading = 4;
-    while(IqrfTrInfoReading) {
+    while(IqrfTrInfoReading)
         iqrfTrInfoTask();
-    }
 
-    // if conected TR module suports fast SPI mode
-    if (iqrfGetModuleType() == TR_72D || iqrfGetModuleType() == TR_76D) {
+    // if connected TR module supports fast SPI mode
+    if (iqrfGetModuleType() == TR_72D || iqrfGetModuleType() == TR_76D)
         iqrfKernelTimingFastMode();                     // switch to fast SPI mode
-    }
 
     IqrfControl.IqrfRxHandler = UserIqrfRxHandler;      //  set user RX handler
 }
@@ -110,19 +108,15 @@ void iqrfInit(T_IQRF_RX_HANDLER UserIqrfRxHandler)
  */
 void iqrfDriver(void)
 {
-    if (IqrfControl.SuspendFlag) {
+    if (IqrfControl.SuspendFlag)
         return;
-    }
 
     if (IqrfControl.Status == IQRF_READ || IqrfControl.Status == IQRF_WRITE || !IqrfControl.TimeCnt) {
         iqrfSpiDriver();
-        if (IqrfControl.FastSPI == true) {
+        if (IqrfControl.FastSPI == true)
             IqrfControl.TimeCnt = (SPI_STATUS_POOLING_TIME * 5) + 1;
-        }
-        else {
+        else
             IqrfControl.TimeCnt = SPI_STATUS_POOLING_TIME + 1;
-        }
-
     }
     IqrfControl.TimeCnt--;
 }
@@ -140,41 +134,39 @@ uint8_t iqrfSendData(uint8_t *DataBuffer, uint8_t DataLength)
 
     // IQRF operation state machine
     switch (IqrfDataSenderSM) {
-        case IQRF_SM_PREPARE_REQUEST: {
-            if (IqrfSpiControl.SpiStat == SPI_DATA_TRANSFER) return (IQRF_OPERATION_IN_PROGRESS);
-            if (IqrfSpiControl.SpiStat != COMMUNICATION_MODE) return(IQRF_TR_MODULE_NOT_READY);
-            if (DataLength == 0 || DataLength > 64) return(IQRF_WRONG_DATA_SIZE);
-            IqrfDataSenderSM = IQRF_SM_SEND_REQUEST;
+    case IQRF_SM_PREPARE_REQUEST:
+        if (IqrfSpiControl.SpiStat == SPI_DATA_TRANSFER)
             return (IQRF_OPERATION_IN_PROGRESS);
-        }
+        if (IqrfSpiControl.SpiStat != COMMUNICATION_MODE)
+            return(IQRF_TR_MODULE_NOT_READY);
+        if (DataLength == 0 || DataLength > 64)
+            return(IQRF_WRONG_DATA_SIZE);
+        IqrfDataSenderSM = IQRF_SM_SEND_REQUEST;
+        return (IQRF_OPERATION_IN_PROGRESS);
         break;
 
-        // process IQRF write request
-        case IQRF_SM_SEND_REQUEST: {
-            // send IQRF write request
-            iqrfSendPacket(SPI_WR_RD, DataBuffer, TempSize);
-            // next SM SPI_STATUS_POOLING_TIME
-            IqrfDataSenderSM = IQRF_SM_PROCESS_REQUEST;
-            return (IQRF_OPERATION_IN_PROGRESS);
-        }
+    // process IQRF write request
+    case IQRF_SM_SEND_REQUEST:
+        // send IQRF write request
+        iqrfSendPacket(SPI_WR_RD, DataBuffer, TempSize);
+        // next SM SPI_STATUS_POOLING_TIME
+        IqrfDataSenderSM = IQRF_SM_PROCESS_REQUEST;
+        return (IQRF_OPERATION_IN_PROGRESS);
         break;
 
-        // process IQRF write request
-        case IQRF_SM_PROCESS_REQUEST: {
-            return (IQRF_OPERATION_IN_PROGRESS);
-        }
+    // process IQRF write request
+    case IQRF_SM_PROCESS_REQUEST:
+        return (IQRF_OPERATION_IN_PROGRESS);
         break;
 
-        // IQRF write request OK
-        case IQRF_SM_REQUEST_OK: {
-            OperationResult = IQRF_OPERATION_OK;
-        }
+    // IQRF write request OK
+    case IQRF_SM_REQUEST_OK:
+        OperationResult = IQRF_OPERATION_OK;
         break;
 
-        // IQRF write request ERR
-        case IQRF_SM_REQUEST_ERR: {
-            OperationResult = IQRF_TR_MODULE_WRITE_ERR;
-        }
+    // IQRF write request ERR
+    case IQRF_SM_REQUEST_ERR:
+        OperationResult = IQRF_TR_MODULE_WRITE_ERR;
         break;
     }
 
@@ -199,12 +191,13 @@ void iqrfSendPacket(uint8_t SpiCmd, uint8_t *UserDataBuffer, uint8_t UserDataLen
 }
 
 /**
- * Temporary suspend IQRF comunication driver
+ * Temporary suspend IQRF communication driver
  */
 void iqrfSuspendDriver(void)
 {
     // wait until library is ready
-    while (IqrfControl.Status == IQRF_READ || IqrfControl.Status == IQRF_WRITE);
+    while (IqrfControl.Status == IQRF_READ || IqrfControl.Status == IQRF_WRITE)
+        ; /* void */
     // set driver suspend flag
     IqrfControl.SuspendFlag = true;
     // set SPI status
@@ -212,11 +205,11 @@ void iqrfSuspendDriver(void)
 }
 
 /**
- * Run IQRF comunication driver
+ * Run IQRF communication driver
  */
 void iqrfRunDriver(void)
 {
-    // reenable IQRF driver running
+    // re-enable IQRF driver running
     IqrfControl.SuspendFlag = false;
 }
 
@@ -283,44 +276,47 @@ void iqrfSpiDriver(void)
         IqrfSpiControl.PacketRxBuffer[IqrfSpiControl.PacketCnt] = iqrfSendSpiByte(IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.PacketCnt]);
         IqrfSpiControl.PacketCnt++;
 
-        if (IqrfSpiControl.PacketCnt == IqrfSpiControl.PacketLen || IqrfSpiControl.PacketCnt == IQRF_PKT_SIZE){
+        if (IqrfSpiControl.PacketCnt==IqrfSpiControl.PacketLen || IqrfSpiControl.PacketCnt==IQRF_PKT_SIZE) {
             iqrfDeselectTRmodule();
-            if ((IqrfSpiControl.PacketRxBuffer[IqrfSpiControl.DLEN + 3] == SPI_CRCM_OK) && iqrfCrcCheck(IqrfSpiControl.PacketRxBuffer, IqrfSpiControl.DLEN, IqrfSpiControl.PTYPE)) {
-                if (IqrfControl.Status == IQRF_READ)  IqrfControl.IqrfRxHandler(&IqrfSpiControl.PacketRxBuffer[2], IqrfSpiControl.DLEN);
-                if (IqrfControl.Status == IQRF_WRITE && IqrfDataSenderSM == IQRF_SM_PROCESS_REQUEST)  IqrfDataSenderSM = IQRF_SM_REQUEST_OK;
+            if ((IqrfSpiControl.PacketRxBuffer[IqrfSpiControl.DLEN + 3] == SPI_CRCM_OK)
+                && iqrfCrcCheck(IqrfSpiControl.PacketRxBuffer, IqrfSpiControl.DLEN, IqrfSpiControl.PTYPE))
+            {
+                if (IqrfControl.Status == IQRF_READ)
+                    IqrfControl.IqrfRxHandler(&IqrfSpiControl.PacketRxBuffer[2], IqrfSpiControl.DLEN);
+                if (IqrfControl.Status==IQRF_WRITE && IqrfDataSenderSM==IQRF_SM_PROCESS_REQUEST)
+                    IqrfDataSenderSM = IQRF_SM_REQUEST_OK;
                 IqrfControl.Status = IQRF_READY;
-            }
-            else {
-                if (--IqrfSpiControl.PacketRpt) IqrfSpiControl.PacketCnt = 0;
-                else {
-                    if (IqrfControl.Status == IQRF_WRITE && IqrfDataSenderSM == IQRF_SM_PROCESS_REQUEST)  IqrfDataSenderSM = IQRF_SM_REQUEST_ERR;
+            } else {
+                if (--IqrfSpiControl.PacketRpt) {
+                    IqrfSpiControl.PacketCnt = 0;
+                } else {
+                    if (IqrfControl.Status == IQRF_WRITE && IqrfDataSenderSM == IQRF_SM_PROCESS_REQUEST)
+                        IqrfDataSenderSM = IQRF_SM_REQUEST_ERR;
                     IqrfControl.Status = IQRF_READY;
                 }
             }
         }
-    }
-    else { // no data to send => SPI status will be updated
-
+    } else { // no data to send => SPI status will be updated
         // get SPI status of TR module
-        IqrfSpiControl.SpiStat =  iqrfSendSpiByte(SPI_CHECK);
+        IqrfSpiControl.SpiStat = iqrfSendSpiByte(SPI_CHECK);
         iqrfDeselectTRmodule();
 
-        // if the status is dataready, prepare packet to read it
+        // if the status is data ready, prepare packet to read it
         if ((IqrfSpiControl.SpiStat & 0xC0) == 0x40) {
             // clear TX buffer
             memset(IqrfSpiControl.PacketTxBuffer, 0, sizeof(IqrfSpiControl.PacketTxBuffer));
             // state 0x40 is 64B ready in TR module
-            if (IqrfSpiControl.SpiStat == 0x40) {
+            if (IqrfSpiControl.SpiStat == 0x40)
                 IqrfSpiControl.DLEN = 64;
-            }
-            else {
-                // clear bit 7,6 - rest is length (1 az 63B)
+            else
+                // clear bit 7,6 - rest is length (1 to 63B)
                 IqrfSpiControl.DLEN = IqrfSpiControl.SpiStat & 0x3F;
-            }
+
             IqrfSpiControl.PTYPE = IqrfSpiControl.DLEN;
             IqrfSpiControl.PacketTxBuffer[0] = SPI_WR_RD;
             IqrfSpiControl.PacketTxBuffer[1] = IqrfSpiControl.PTYPE;
-            IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.DLEN + 2] = iqrfCrcCalculate(IqrfSpiControl.PacketTxBuffer, IqrfSpiControl.DLEN);
+            IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.DLEN + 2] =
+                iqrfCrcCalculate(IqrfSpiControl.PacketTxBuffer, IqrfSpiControl.DLEN);
             // length of whole packet + (CMD, PTYPE, CRCM, 0)
             IqrfSpiControl.PacketLen = IqrfSpiControl.DLEN + 4;
             // counter of sent bytes
@@ -345,7 +341,9 @@ void iqrfSpiDriver(void)
             // writing to buffer COM of TR module
             IqrfControl.Status = IQRF_WRITE;
 
-            if (IqrfSpiControl.PacketTxBuffer[0] == SPI_MODULE_INFO && (IqrfSpiControl.DLEN == 16 || IqrfSpiControl.DLEN == 32)) {
+            if (IqrfSpiControl.PacketTxBuffer[0] == SPI_MODULE_INFO
+                && (IqrfSpiControl.DLEN == 16 || IqrfSpiControl.DLEN == 32))
+            {
                 IqrfSpiControl.PTYPE &= 0x7F;
                 IqrfControl.Status = IQRF_READ;
             }
@@ -353,7 +351,8 @@ void iqrfSpiDriver(void)
             IqrfSpiControl.PacketTxBuffer[1] = IqrfSpiControl.PTYPE;
             memcpy (&IqrfSpiControl.PacketTxBuffer[2], IqrfPacket.DataBuffer, IqrfSpiControl.DLEN);
 
-            IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.DLEN + 2] = iqrfCrcCalculate(IqrfSpiControl.PacketTxBuffer, IqrfSpiControl.DLEN);
+            IqrfSpiControl.PacketTxBuffer[IqrfSpiControl.DLEN + 2] =
+                iqrfCrcCalculate(IqrfSpiControl.PacketTxBuffer, IqrfSpiControl.DLEN);
             // length of whole packet + (CMD, PTYPE, CRCM, 0)
             IqrfSpiControl.PacketLen = IqrfSpiControl.DLEN + 4;
             // counter of sent bytes
@@ -378,10 +377,9 @@ void iqrfSpiDriver(void)
 uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength)
 {
     uint8_t Crc = 0x5F;
-    for (uint8_t I = 0; I < (DataLength + 2); I++) {
+    for (uint8_t I = 0; I < (DataLength + 2); I++)
         Crc ^= Buffer[I];
-    }
-    return Crc;
+    return (Crc);
 }
 
 
@@ -395,17 +393,14 @@ uint8_t iqrfCrcCalculate(uint8_t *Buffer, uint8_t DataLength)
 bool iqrfCrcCheck(uint8_t *Buffer, uint8_t DataLength, uint8_t Ptype)
 {
     uint8_t Crc = 0x5F ^ Ptype;
-    for (uint8_t I = 2; I < (DataLength + 2); I++) {
+    for (uint8_t I = 2; I < (DataLength + 2); I++)
         Crc ^= Buffer[I];
-    }
-    if (Buffer[DataLength + 2] == Crc) {
-        // CRCS ok
-        return true;
-    }
-    else {
+    if (Buffer[DataLength + 2] == Crc)
+        // CRCS OK
+        return (true);
+    else
         // CRCS error
-        return false;
-    }
+        return (false);
 }
 
 
@@ -427,72 +422,69 @@ void iqrfTrInfoTask(void)
     } TrInfoTaskSM = INIT_TASK;
 
     switch (TrInfoTaskSM) {
-        case INIT_TASK:
-            // try enter to programming mode
-            Attempts = 1;
-            IqrfTrInfoStruct.McuType = MCU_UNKNOWN;
-            memset(&DataToModule[0], 0, 32);
-            // next state - will read info in PGM mode
-            TrInfoTaskSM = ENTER_PROG_MODE;
-        break;
-        case ENTER_PROG_MODE:
-            iqrfTrEnterPgmMode();
-            SysTickTime = iqrfGetSysTick();
-            TrInfoTaskSM = SEND_REQUEST;
+    case INIT_TASK:
+        // try enter to programming mode
+        Attempts = 1;
+        IqrfTrInfoStruct.McuType = MCU_UNKNOWN;
+        memset(&DataToModule[0], 0, 32);
+        // next state - will read info in PGM mode
+        TrInfoTaskSM = ENTER_PROG_MODE;
         break;
 
-        case SEND_REQUEST:
-            if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY) {
-                if (IqrfTrInfoReading == 4) {
-                    // request for basic TR module info
-                    iqrfSendPacket(SPI_MODULE_INFO, &DataToModule[0], 1);
-                }
-                else {
-                    // request for extended TR module info
-                    iqrfSendPacket(SPI_MODULE_INFO, &DataToModule[0], 32);
-                }
-                // initialize timeout timer
-                SysTickTime = iqrfGetSysTick();
-                TrInfoTaskSM = WAIT_INFO;
-            }
-            else {
-                if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
-                    // in a case, try it twice to enter programming mode
-                    if (Attempts) {
-                        Attempts--;
-                        TrInfoTaskSM = ENTER_PROG_MODE;
-                    }
-                    else {
-                        // TR module probably does not work
-                        TrInfoTaskSM = DONE;
-                    }
-                }
-            }
+    case ENTER_PROG_MODE:
+        iqrfTrEnterPgmMode();
+        SysTickTime = iqrfGetSysTick();
+        TrInfoTaskSM = SEND_REQUEST;
         break;
-        // wait for info data from TR module
-        case WAIT_INFO:
-            if ((IqrfTrInfoReading == 2) || (IqrfTrInfoReading == 1) || (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2))) {
-                if (IqrfTrInfoReading == 2) {
-                    IqrfTrInfoReading = 3;
-                    // initialize timeout timer
-                    SysTickTime = iqrfGetSysTick();
-                    // next state - read extended edentification info
-                    TrInfoTaskSM = SEND_REQUEST;
-                }
-                else {
-                    // send end of PGM mode packet
-                    iqrfTrEndPgmMode();
-                    // next state
+
+    case SEND_REQUEST:
+        if (iqrfGetSpiStatus() == PROGRAMMING_MODE && iqrfGetLibraryStatus() == IQRF_READY) {
+            if (IqrfTrInfoReading == 4)
+                // request for basic TR module info
+                iqrfSendPacket(SPI_MODULE_INFO, &DataToModule[0], 1);
+            else
+                // request for extended TR module info
+                iqrfSendPacket(SPI_MODULE_INFO, &DataToModule[0], 32);
+            // initialize timeout timer
+            SysTickTime = iqrfGetSysTick();
+            TrInfoTaskSM = WAIT_INFO;
+        } else {
+            if (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2)) {
+                // in a case, try it twice to enter programming mode
+                if (Attempts) {
+                    Attempts--;
+                    TrInfoTaskSM = ENTER_PROG_MODE;
+                } else {
+                    // TR module probably does not work
                     TrInfoTaskSM = DONE;
                 }
             }
+        }
         break;
-        // the task is finished
-        case DONE:
-            // if no packet is pending to send to TR module
-            if (iqrfGetTxBufferStatus() == IQRF_BUFFER_FREE && iqrfGetLibraryStatus() == IQRF_READY) {
-                IqrfTrInfoReading = 0;
+
+    // wait for info data from TR module
+    case WAIT_INFO:
+        if ((IqrfTrInfoReading == 2) || (IqrfTrInfoReading == 1) || (iqrfGetSysTick() - SysTickTime >= (TICKS_IN_SECOND / 2))) {
+            if (IqrfTrInfoReading == 2) {
+                IqrfTrInfoReading = 3;
+                // initialize timeout timer
+                SysTickTime = iqrfGetSysTick();
+                // next state - read extended edentification info
+                TrInfoTaskSM = SEND_REQUEST;
+            } else {
+                // send end of PGM mode packet
+                iqrfTrEndPgmMode();
+                // next state
+                TrInfoTaskSM = DONE;
             }
+        }
+        break;
+
+    // the task is finished
+    case DONE:
+        // if no packet is pending to send to TR module
+        if (iqrfGetTxBufferStatus() == IQRF_BUFFER_FREE && iqrfGetLibraryStatus() == IQRF_READY)
+            IqrfTrInfoReading = 0;
         break;
     }
 }
@@ -507,23 +499,24 @@ void iqrfTrInfoProcess(uint8_t *DataBuffer, uint8_t DataSize)
 {
     if (IqrfTrInfoReading == 4) {   // process basic TR module info
         memcpy((uint8_t *) &IqrfTrInfoStruct.ModuleInfoRawData, DataBuffer, sizeof (IqrfTrInfoStruct.ModuleInfoRawData));
-        IqrfTrInfoStruct.ModuleId = (uint32_t)DataBuffer[0] << 24 | (uint32_t)DataBuffer[1] << 16 | (uint32_t)DataBuffer[2] << 8 | DataBuffer[3];
+        IqrfTrInfoStruct.ModuleId = (uint32_t)DataBuffer[0] << 24
+            | (uint32_t)DataBuffer[1] << 16
+            | (uint32_t)DataBuffer[2] << 8
+            | DataBuffer[3];
         IqrfTrInfoStruct.OsVersion = (uint16_t)(DataBuffer[4] / 16) << 8 | (DataBuffer[4] % 16);
         IqrfTrInfoStruct.McuType = DataBuffer[5] & 0x07;
         IqrfTrInfoStruct.Fcc = (DataBuffer[5] & 0x08) >> 3;
         IqrfTrInfoStruct.ModuleType = DataBuffer[5] >> 4;
         IqrfTrInfoStruct.OsBuild = (uint16_t)DataBuffer[7] << 8 | DataBuffer[6];
 
-        if (((IqrfTrInfoStruct.OsVersion >> 8) > 4) ||
-            (((IqrfTrInfoStruct.OsVersion >> 8) == 4) && ((IqrfTrInfoStruct.OsVersion & 0x00FF) >= 3)))
+        if (((IqrfTrInfoStruct.OsVersion >> 8) > 4)
+            || (((IqrfTrInfoStruct.OsVersion >> 8) == 4) && ((IqrfTrInfoStruct.OsVersion & 0x00FF) >= 3)))
         {
             IqrfTrInfoReading = 2;    // read extended identification info
-        }
-        else {
+        } else {
             IqrfTrInfoReading = 1;    // end
         }
-    }
-    else {  // process extended TR module info
+    } else {  // process extended TR module info
         // copy IBK data to TR module info structure
         memcpy((uint8_t *) &IqrfTrInfoStruct.Ibk[0], DataBuffer+16, 16);
         IqrfTrInfoReading = 1;        // end
