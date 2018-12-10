@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 1.2.0
+ * @version 1.2.1
  *
  * Copyright 2015-2017 IQRF Tech s.r.o.
  *

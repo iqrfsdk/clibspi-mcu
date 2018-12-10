@@ -3,7 +3,7 @@
  * @author Dušan Machút <dusan.machut@iqrf.com>
  * @author Rostislav Špinar <rostislav.spinar@iqrf.com>
  * @author Roman Ondráček <roman.ondracek@iqrf.com>
- * @version 3.1.0
+ * @version 3.1.1
  *
  * Copyright 2015-2018 IQRF Tech s.r.o.
  *
@@ -68,7 +68,7 @@ extern "C" {
 #define USER_KEY_CFG_ADR              0xD1
 
 /**
- * Checking the format accuracy of the programing file
+ * Checking the format accuracy of the programming file
  * @return result of partial checking operation
  */
 uint8_t iqrfPgmCheckCodeFile(void);
